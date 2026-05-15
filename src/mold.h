@@ -1711,6 +1711,11 @@ public:
   bool has_init_array = false;
   bool has_ctors = false;
 
+  // Non-zero when the file was read inside a --start-group/--end-group
+  // region. Used by --warn-backrefs to suppress warnings between members
+  // of the same explicit group.
+  i64 group_id = 0;
+
   // To create an output .symtab
   u64 local_symtab_idx = 0;
   u64 global_symtab_idx = 0;
@@ -1869,6 +1874,7 @@ struct ReaderContext {
   bool in_lib = false;
   bool static_ = false;
   bool whole_archive = false;
+  i64 group_id = 0;
   tbb::task_group *tg = nullptr;
 };
 
@@ -2479,6 +2485,7 @@ struct Context {
 
   // Reader context
   i64 file_priority = 10000;
+  i64 group_id_counter = 0;
 
   // Symbol table
   tbb::concurrent_hash_map<std::string_view, Symbol<E>, HashCmp> symbol_map;

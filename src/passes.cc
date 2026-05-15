@@ -965,6 +965,9 @@ void warn_backrefs(Context<E> &ctx) {
       const ElfSym<E> &esym = file->elf_syms[i];
       if (!esym.is_undef())
         continue;
+      // Weak refs are explicitly optional; back-resolution is harmless.
+      if (esym.st_bind == STB_WEAK)
+        continue;
 
       Symbol<E> *sym = file->symbols[i];
       if (!sym->file)
@@ -985,6 +988,24 @@ void warn_backrefs(Context<E> &ctx) {
       // than the referrer, so GNU ld's single-pass scan would have missed
       // the member (no undef ref existed yet when the archive was read).
       if (def_obj->priority >= file->priority)
+        continue;
+
+      // --start-group / --end-group regions explicitly opt into iterate-
+      // to-fixpoint resolution; suppress warnings between same-group files.
+      if (file->group_id != 0 && file->group_id == def_obj->group_id)
+        continue;
+
+      // --warn-backrefs-exclude=NAME suppresses by definer basename, matching
+      // lld's semantics.
+      bool excluded = false;
+      std::string def_base = path_filename(def_obj->filename);
+      for (const std::string &pat : ctx.arg.warn_backrefs_exclude) {
+        if (def_base == pat) {
+          excluded = true;
+          break;
+        }
+      }
+      if (excluded)
         continue;
 
       Warn(ctx) << "backward reference detected: " << *sym << " in "

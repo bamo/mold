@@ -29,6 +29,7 @@ static ObjectFile<E> *new_object_file(Context<E> &ctx, ReaderContext &rctx,
   ObjectFile<E> *file = new ObjectFile<E>(ctx, mf, archive_name);
   ctx.obj_pool.emplace_back(file);
   file->priority = ctx.file_priority++;
+  file->group_id = rctx.group_id;
   file->as_needed =
     rctx.in_lib || (!archive_name.empty() && !rctx.whole_archive);
 
@@ -52,6 +53,7 @@ static ObjectFile<E> *new_lto_obj(Context<E> &ctx, ReaderContext &rctx,
     return nullptr;
 
   file->priority = ctx.file_priority++;
+  file->group_id = rctx.group_id;
   file->archive_name = archive_name;
   file->as_needed =
     rctx.in_lib || (!archive_name.empty() && !rctx.whole_archive);
@@ -69,6 +71,7 @@ new_shared_file(Context<E> &ctx, ReaderContext &rctx, MappedFile *mf) {
   SharedFile<E> *file = new SharedFile<E>(ctx, mf);
   ctx.dso_pool.emplace_back(file);
   file->priority = ctx.file_priority++;
+  file->group_id = rctx.group_id;
   file->as_needed = rctx.as_needed;
 
   rctx.tg->run([file, &ctx] { file->parse(ctx); });
@@ -223,6 +226,10 @@ static void read_input_files(Context<E> &ctx, std::span<std::string> args) {
       rctx.in_lib = true;
     } else if (arg == "--end-lib") {
       rctx.in_lib = false;
+    } else if (arg == "--start-group") {
+      rctx.group_id = ++ctx.group_id_counter;
+    } else if (arg == "--end-group") {
+      rctx.group_id = 0;
     } else if (arg == "--push-state") {
       stack.push_back(rctx);
     } else if (arg == "--pop-state") {

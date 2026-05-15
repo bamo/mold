@@ -1424,10 +1424,10 @@ std::vector<std::string> parse_nonpositional_args(Context<E> &ctx) {
     } else if (read_flag("verbose")) {
     } else if (read_flag("color-diagnostics")) {
     } else if (read_flag("eh-frame-hdr")) {
-    } else if (read_flag("start-group")) {
-    } else if (read_flag("end-group")) {
-    } else if (read_flag("(")) {
-    } else if (read_flag(")")) {
+    } else if (read_flag("start-group") || read_flag("(")) {
+      remaining.emplace_back("--start-group");
+    } else if (read_flag("end-group") || read_flag(")")) {
+      remaining.emplace_back("--end-group");
     } else if (read_flag("fatal-warnings")) {
     } else if (read_flag("enable-new-dtags")) {
     } else if (read_flag("disable-new-dtags")) {
