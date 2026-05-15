@@ -952,6 +952,48 @@ void apply_section_align(Context<E> &ctx) {
 }
 
 template <typename E>
+void warn_backrefs(Context<E> &ctx) {
+  if (!ctx.arg.warn_backrefs)
+    return;
+  Timer t(ctx, "warn_backrefs");
+
+  for (ObjectFile<E> *file : ctx.objs) {
+    if (file == ctx.internal_obj)
+      continue;
+
+    for (i64 i = file->first_global; i < (i64)file->elf_syms.size(); i++) {
+      const ElfSym<E> &esym = file->elf_syms[i];
+      if (!esym.is_undef())
+        continue;
+
+      Symbol<E> *sym = file->symbols[i];
+      if (!sym->file)
+        continue;
+
+      InputFile<E> *def_file = sym->file;
+      // Match lld: archive members only, not DSOs.
+      if (def_file->is_dso)
+        continue;
+
+      ObjectFile<E> *def_obj = (ObjectFile<E> *)def_file;
+      if (def_obj == ctx.internal_obj)
+        continue;
+      if (def_obj->archive_name.empty())
+        continue;
+
+      // Back-ref: definer's archive was read EARLIER on the command line
+      // than the referrer, so GNU ld's single-pass scan would have missed
+      // the member (no undef ref existed yet when the archive was read).
+      if (def_obj->priority >= file->priority)
+        continue;
+
+      Warn(ctx) << "backward reference detected: " << *sym << " in "
+                << *file << " refers to " << *def_obj;
+    }
+  }
+}
+
+template <typename E>
 void check_cet_errors(Context<E> &ctx) {
   bool warning = (ctx.arg.z_cet_report == CET_REPORT_WARNING);
   assert(warning || ctx.arg.z_cet_report == CET_REPORT_ERROR);
@@ -3645,6 +3687,7 @@ template void create_internal_file(Context<E> &);
 template void apply_exclude_libs(Context<E> &);
 template void create_synthetic_sections(Context<E> &);
 template void resolve_symbols(Context<E> &);
+template void warn_backrefs(Context<E> &);
 template void do_lto(Context<E> &);
 template void parse_eh_frame_sections(Context<E> &);
 template void create_merged_sections(Context<E> &);

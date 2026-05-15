@@ -358,6 +358,11 @@ int mold_main(int argc, char **argv) {
   std::erase_if(ctx.objs, [](InputFile<E> *file) { return !file->is_reachable; });
   std::erase_if(ctx.dsos, [](InputFile<E> *file) { return !file->is_reachable; });
 
+  // Detect symbols resolved by archive members that appear later on the
+  // command line than the referrer — i.e., links that depend on mold/lld's
+  // eager archive resolution and would fail under GNU ld's single-pass scan.
+  warn_backrefs(ctx);
+
   // Parse .eh_frame section contents.
   parse_eh_frame_sections(ctx);
 
