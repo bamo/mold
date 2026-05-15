@@ -1033,6 +1033,12 @@ std::vector<std::string> parse_nonpositional_args(Context<E> &ctx) {
       ctx.arg.color_diagnostics = true;
     } else if (read_flag("color-diagnostics=never")) {
       ctx.arg.color_diagnostics = false;
+    } else if (read_flag("warn-backrefs")) {
+      ctx.arg.warn_backrefs = true;
+    } else if (read_flag("no-warn-backrefs")) {
+      ctx.arg.warn_backrefs = false;
+    } else if (read_arg("warn-backrefs-exclude")) {
+      ctx.arg.warn_backrefs_exclude.push_back(std::string(arg));
     } else if (read_flag("warn-common")) {
       ctx.arg.warn_common = true;
     } else if (read_flag("no-warn-common")) {

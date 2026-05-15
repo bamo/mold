@@ -2393,9 +2393,11 @@ struct Context {
     bool trace = false;
     bool undefined_version = false;
     bool use_android_relr_tags = false;
+    bool warn_backrefs = false;
     bool warn_common = false;
     bool warn_once = false;
     bool warn_textrel = false;
+    std::vector<std::string> warn_backrefs_exclude;
     bool z_copyreloc = true;
     bool z_delete = true;
     bool z_dlopen = true;
